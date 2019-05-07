@@ -34,12 +34,18 @@ import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2{
 
+
+    //NOTE: all information and references about the setup of openCV have been mentioned in the readme.md file in the project as requested
+
+
     private CameraBridgeViewBase        mOpenCvCameraView;
     private CascadeClassifier           cascadeClassifier;
     private int                         absoluteFaceSize;
     private CheckBox                    nose;
-    private  CheckBox                   rectangle;
+    private CheckBox                    rectangle;
     private static final String         TAG =   "OCVSample::Activity";
+
+
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -58,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             }
         }
     };
+
 
     public MainActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -84,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         }
     }
 
+
+
     @Override
     public void onPause()
     {
@@ -91,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
+
 
     @Override
     public void onResume()
@@ -105,29 +115,30 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         }
     }
 
+
     public void onDestroy() {
         super.onDestroy();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
 
-    public void onCameraViewStarted(int width, int height) {
 
+    public void onCameraViewStarted(int width, int height) {
         // The faces will be a 20% of the height of the screen
         absoluteFaceSize = (int) (height * 0.2);
     }
+
 
     public void onCameraViewStopped() {
     }
 
 
 
-
-//Inspiration from
-// https://docs.opencv.org/3.4.1/d7/d8b/tutorial_py_face_detection.html
-// https://www.mirkosertic.de/blog/2013/07/realtime-face-detection-on-android-using-opencv/
+    //Inspiration from
+    // https://docs.opencv.org/3.4.1/d7/d8b/tutorial_py_face_detection.html
+    // https://www.mirkosertic.de/blog/2013/07/realtime-face-detection-on-android-using-opencv/
     // frame colour to RGB from, https://stackoverflow.com/questions/39957955/how-to-convert-the-mat-object-to-a-bitmap-while-perserving-the-color
-    //frame corrected to be in portrait, https://stackoverflow.com/questions/14816166/rotate-camera-preview-to-portrait-android-opencv-camera
+    // frame corrected to be in portrait, https://stackoverflow.com/questions/14816166/rotate-camera-preview-to-portrait-android-opencv-camera
     // edited class CameraBridgeViewBase.java 's method deliverAndDrawFrame() for the above.
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 
@@ -144,13 +155,12 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         if (cascadeClassifier != null) {
             cascadeClassifier.detectMultiScale(gray, faces, 1.1, 1, 1,
                     new Size(absoluteFaceSize, absoluteFaceSize), new Size());
-
         }
 
         Rect[] facesArray = faces.toArray();
 
         for (int i = 0; i < facesArray.length; i++) {
-            //Drawing Functions on the IMGPROC
+            // Drawing Functions on the IMGPROC
             // https://docs.opencv.org/3.0-beta/modules/core/doc/drawing_functions.html
             if(rectangle.isChecked())
                 Imgproc.rectangle(color, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0, 255), 3);
