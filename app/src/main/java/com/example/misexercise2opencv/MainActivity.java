@@ -31,6 +31,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+import android.widget.CheckBox;
 import android.widget.Toast;
 
 import java.io.File;
@@ -41,14 +42,15 @@ import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2{
 
-    private static final String TAG = "OCVSample::Activity";
-
-    private CameraBridgeViewBase    mOpenCvCameraView;
-    private boolean                 mIsJavaCamera = true;
-    private MenuItem                mItemSwitchCamera = null;
-    private CascadeClassifier cascadeClassifier;
-    private Mat grayscaleImage;
-    private int absoluteFaceSize;
+    private CameraBridgeViewBase        mOpenCvCameraView;
+    private boolean                     mIsJavaCamera = true;
+    private MenuItem                    mItemSwitchCamera = null;
+    private CascadeClassifier           cascadeClassifier;
+    private Mat                         grayscaleImage;
+    private int                         absoluteFaceSize;
+    private CheckBox                    nose;
+    private  CheckBox                   rectangle;
+    private static final String         TAG =   "OCVSample::Activity";
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -87,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 0x123);
         } else {
-            mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.tutorial1_activity_java_surface_view);
+            mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.surface_view);
             mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
             mOpenCvCameraView.setCvCameraViewListener(this);
         }
@@ -129,57 +131,50 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
     public void onCameraViewStopped() {
     }
+
+
+
+
 //Inspiration from
 // https://docs.opencv.org/3.4.1/d7/d8b/tutorial_py_face_detection.html
 // https://www.mirkosertic.de/blog/2013/07/realtime-face-detection-on-android-using-opencv/
+    // frame colour to RGB from, https://stackoverflow.com/questions/39957955/how-to-convert-the-mat-object-to-a-bitmap-while-perserving-the-color
+    //frame corrected to be in portrait, https://stackoverflow.com/questions/14816166/rotate-camera-preview-to-portrait-android-opencv-camera
+    // edited class CameraBridgeViewBase.java 's method deliverAndDrawFrame() for the above.
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 
-        //return inputFrame.rgba();
-        /*
-        Mat col  = inputFrame.rgba();
-        Rect foo = new Rect(new Point(100,100), new Point(200,200));
-        Imgproc.rectangle(col, foo.tl(), foo.br(), new Scalar(0, 0, 255), 3);
-        return col;
-        */
-
-
         Mat gray = inputFrame.gray();
+        Mat color = inputFrame.rgba();
+        nose = (CheckBox) findViewById(R.id.nose);
+        rectangle = (CheckBox) findViewById(R.id.rectangle);
 
-        Mat col  = inputFrame.rgba();
-        Core.rotate(gray.t(),gray,0);
-        Mat tmp = gray.clone();
-        //Imgproc.Canny(gray, tmp, 80, 100);
-        //Core.rotate( gray, col, Core.ROTATE_90_CLOCKWISE);
-
-        Imgproc.cvtColor( gray,col, Imgproc.COLOR_GRAY2RGB);
-       // Core.rotate( col.t(), col, 2);
-        //Core.transpose(col,col);
-
+        Imgproc.cvtColor(color, color, Imgproc.COLOR_BGRA2RGBA);
 
         cascadeClassifier = new CascadeClassifier(initAssetFile("haarcascade_frontalface_default.xml"));
         Log.i(TAG,"cascadeClassifier open: "+cascadeClassifier.empty());
         MatOfRect faces=new MatOfRect();
+
         if (cascadeClassifier != null) {
             cascadeClassifier.detectMultiScale(gray, faces, 1.1, 1, 1,
                     new Size(absoluteFaceSize, absoluteFaceSize), new Size());
             Log.i(TAG,"inside the if");
         }
 
-
-
         Rect[] facesArray = faces.toArray();
         Log.i(TAG,"facesArray length : "+facesArray.length);
+
         for (int i = 0; i < facesArray.length; i++) {
             //Drawing Functions on the IMGPROC
             // https://docs.opencv.org/3.0-beta/modules/core/doc/drawing_functions.html
-            Imgproc.rectangle(col, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0, 255), 3);
-            Imgproc.circle(col,new Point(facesArray[i].x+(facesArray[i].width/2),facesArray[i].y+(facesArray[i].width/2)),facesArray[i].height/8,new Scalar(255, 0, 0, 0),-1);
+            if(rectangle.isChecked())
+                Imgproc.rectangle(color, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0, 255), 3);
+            if(nose.isChecked())
+                Imgproc.circle(color,new Point(facesArray[i].x+(facesArray[i].width/2),facesArray[i].y+(facesArray[i].width/2)),facesArray[i].height/4,new Scalar(255, 0, 0, 0),-1);
             Log.i(TAG,"inside the for");
         }
-
-
-        return col;
+        return color;
     }
+
 
 
     public String initAssetFile(String filename)  {

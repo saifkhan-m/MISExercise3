@@ -15,6 +15,7 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -361,12 +362,14 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
             AlertDialog ad = new AlertDialog.Builder(getContext()).create();
             ad.setCancelable(false); // This blocks the 'BACK' button
             ad.setMessage("It seems that you device does not support camera (or it is locked). Application will be closed.");
-            ad.setButton(DialogInterface.BUTTON_NEUTRAL,  "OK", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    ((Activity) getContext()).finish();
-                }
-            });
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CUPCAKE) {
+                ad.setButton(DialogInterface.BUTTON_NEUTRAL,  "OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        ((Activity) getContext()).finish();
+                    }
+                });
+            }
             ad.show();
 
         }
@@ -406,8 +409,12 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
             }
         }
 
+            //https://stackoverflow.com/questions/14816166/rotate-camera-preview-to-portrait-android-opencv-camera
+
         if (bmpValid && mCacheBitmap != null) {
             Canvas canvas = getHolder().lockCanvas();
+            // Rotate canvas to 90 degrees
+            canvas.rotate(90f, canvas.getWidth()/2, canvas.getHeight()/2);
             if (canvas != null) {
                 canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
                 if (BuildConfig.DEBUG)
@@ -431,6 +438,19 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
                     mFpsMeter.measure();
                     mFpsMeter.draw(canvas, 20, 30);
                 }
+
+//                // Resize
+//                Bitmap bitmap = Bitmap.createScaledBitmap(mCacheBitmap, canvas.getHeight(), canvas.getWidth(), true);
+//                // Use bitmap instead of mCacheBitmap
+//                canvas.drawBitmap(bitmap, new Rect(0,0,bitmap.getWidth(), bitmap.getHeight()), new Rect(
+//                        (int)((canvas.getWidth() - mScale*bitmap.getWidth()) / 2),
+//                        (int)((canvas.getHeight() - mScale*bitmap.getHeight()) / 2),
+//                        (int)((canvas.getWidth() - mScale*bitmap.getWidth()) / 2 + mScale*bitmap.getWidth()),
+//                        (int)((canvas.getHeight() - mScale*bitmap.getHeight()) / 2 + mScale*bitmap.getHeight()
+//                )), null);
+
+
+                // Unlock canvas
                 getHolder().unlockCanvasAndPost(canvas);
             }
         }
